@@ -1,0 +1,17 @@
+name: Publish to GitHub Packages
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - gradle.properties
+  pull_request:
+
+permissions:
+  packages: write
+  contents: read
+
+jobs:
+  lib-publication:
+    uses: YuriyNekludov/personal-ops-repository/.github/workflows/lib-publication-workflow.yml@main
+    secrets: inherit
