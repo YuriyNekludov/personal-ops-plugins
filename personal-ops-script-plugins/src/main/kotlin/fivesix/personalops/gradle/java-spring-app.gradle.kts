@@ -1,3 +1,5 @@
+package fivesix.personalops.gradle
+
 import fivesix.personalops.gradle.spring.DevToolsExtension
 
 plugins {
