@@ -2,7 +2,11 @@ package fivesix.personalops.settings
 
 import org.gradle.api.Plugin
 import org.gradle.api.initialization.Settings
+import org.gradle.api.plugins.JavaPlugin
+import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.kotlin.dsl.create
+import org.gradle.kotlin.dsl.getByType
+import org.gradle.kotlin.dsl.withType
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -21,6 +25,30 @@ class PersonalOpsSettingsPlugin : Plugin<Settings> {
         target.dependencyResolutionManagement {
             versionCatalogs {
                 create("libs") { from("$platformGroup:$platformArtifact:$platformVersion") }
+            }
+        }
+
+        target.gradle.beforeProject {
+            val opsPlatform = configurations.create("opsPlatform").apply {
+                isCanBeResolved = false
+                isCanBeConsumed = false
+                withDependencies {
+                    add(project.dependencies.platform("$platformGroup:$platformArtifact:$platformVersion"))
+                }
+            }
+
+            plugins.withType<JavaPlugin> {
+                extensions.getByType<JavaPluginExtension>().sourceSets.configureEach {
+                    configurations.named(compileClasspathConfigurationName).configure { extendsFrom(opsPlatform) }
+                    configurations.named(runtimeClasspathConfigurationName).configure { extendsFrom(opsPlatform) }
+                    configurations.named(annotationProcessorConfigurationName).configure { extendsFrom(opsPlatform) }
+                }
+            }
+
+            pluginManager.withPlugin("org.jetbrains.kotlin.kapt") {
+                configurations.matching { it.name.startsWith("kapt") }.configureEach {
+                    extendsFrom(opsPlatform)
+                }
             }
         }
     }
@@ -44,7 +72,7 @@ class PersonalOpsSettingsPlugin : Plugin<Settings> {
                 .build()
 
             val request = HttpRequest.newBuilder()
-                .uri(URI(url.get()))
+                .uri(URI.create(url.get()))
                 .GET()
                 .timeout(Duration.ofSeconds(5))
                 .build()
