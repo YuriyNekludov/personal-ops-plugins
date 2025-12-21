@@ -4,7 +4,6 @@ import org.gradle.api.Plugin
 import org.gradle.api.initialization.Settings
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.plugins.JavaPluginExtension
-import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.withType
 import java.net.URI
@@ -17,10 +16,9 @@ import java.time.Duration
 class PersonalOpsSettingsPlugin : Plugin<Settings> {
 
     override fun apply(target: Settings) {
-        val platformConfigurer = target.extensions.create<PersonalOpsPlatformExt>("platformConfigurer")
         val platformGroup = "fivesix.personalops"
         val platformArtifact = "personal-ops-platform"
-        val platformVersion = resolvePlatformVersion(target, platformConfigurer)
+        val platformVersion = resolvePlatformVersion(target)
 
         target.dependencyResolutionManagement {
             versionCatalogs {
@@ -53,15 +51,15 @@ class PersonalOpsSettingsPlugin : Plugin<Settings> {
         }
     }
 
-    private fun resolvePlatformVersion(target: Settings, platformConfigurer: PersonalOpsPlatformExt): String {
+    private fun resolvePlatformVersion(target: Settings): String {
         target.providers.gradleProperty("platformVersion").orNull?.let { return it }
         target.providers.environmentVariable("PLATFORM_VERSION").orNull?.let { return it }
 
-        val cacheRefresh = platformConfigurer.cleanCache.getOrElse(false)
+        val cleanCache = target.providers.gradleProperty("cleanCache").getOrElse("false").toBoolean()
         val cacheFile = target.gradle.gradleUserHomeDir.resolve("caches/personal-ops/platform-version.txt")
         val cachePath = cacheFile.toPath()
 
-        return if (!cacheFile.exists() || cacheRefresh) {
+        return if (!cacheFile.exists() || cleanCache) {
             Files.createDirectories(cachePath.parent)
 
             val url = target.providers.gradleProperty("platformUrl")
