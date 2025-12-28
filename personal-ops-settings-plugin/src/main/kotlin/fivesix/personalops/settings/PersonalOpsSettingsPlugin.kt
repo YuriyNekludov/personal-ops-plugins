@@ -55,7 +55,7 @@ class PersonalOpsSettingsPlugin : Plugin<Settings> {
         target.providers.gradleProperty("platformVersion").orNull?.let { return it }
         target.providers.environmentVariable("PLATFORM_VERSION").orNull?.let { return it }
 
-        val cleanCache = target.providers.gradleProperty("cleanCache").getOrElse("false").toBoolean()
+        val cleanCache = target.providers.gradleProperty("cleanCache").orElse("false").get().toBoolean()
         val cacheFile = target.gradle.gradleUserHomeDir.resolve("caches/personal-ops/platform-version.txt")
         val cachePath = cacheFile.toPath()
 
